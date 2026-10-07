@@ -1,0 +1,15 @@
+[
+  {
+    "modid": "Daylight-Reborn",
+    "name": "Daylight-Reborn",
+    "description": "Daylight-Reborn-V1.9.Changed it by WarierQAQ",
+    "version": "Release",
+    "mcversion": "1.8.9",
+    "url": "https://aspw-w.github.io/Daylight",
+    "authorList": [
+      "As_pw"
+    ],
+    "screenshots": [],
+    "dependencies": []
+  }
+]

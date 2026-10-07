@@ -1,0 +1,132 @@
+package net.aspw.client
+
+import net.aspw.client.config.FileManager
+import net.aspw.client.event.ClientShutdownEvent
+import net.aspw.client.event.EventManager
+import net.aspw.client.features.api.DiscordRPC
+import net.aspw.client.features.api.MacroManager
+import net.aspw.client.features.api.PacketManager
+import net.aspw.client.features.command.CommandManager
+import net.aspw.client.features.module.ModuleManager
+import net.aspw.client.features.module.impl.other.BrandSpoofer
+import net.aspw.client.features.module.impl.visual.Interface
+import net.aspw.client.features.module.impl.visual.SilentRotations
+import net.aspw.client.features.module.impl.visual.TargetESP
+import net.aspw.client.features.module.impl.visual.Trajectories
+import net.aspw.client.utils.*
+import net.aspw.client.utils.misc.sound.TipSoundManager
+import net.aspw.client.visual.client.clickgui.dropdown.ClickGui
+import net.aspw.client.visual.font.semi.Fonts
+
+object Launch {
+
+    // Client information
+    const val CLIENT_BEST = "Daylight"
+    const val CLIENT_FOLDER = "Daylight-Client"
+    const val CLIENT_VERSION = "b1.0"
+    const val CLIENT_CHAT = "§7[§bD§3a§ey§al§bi§dg§3h§bt§7] [§eInfo§7] §r"
+
+    var isStarting = false
+
+    // Managers
+    lateinit var moduleManager: ModuleManager
+    lateinit var commandManager: CommandManager
+    lateinit var eventManager: EventManager
+    lateinit var fileManager: FileManager
+    lateinit var tipSoundManager: TipSoundManager
+
+    lateinit var clickGui: ClickGui
+
+    private var lastTick: Long = 0L
+
+    // Discord RPC
+    lateinit var discordRPC: DiscordRPC
+
+    /**
+     * Execute if client will be started
+     */
+    fun startClient() {
+        isStarting = true
+
+        ClientUtils.getLogger().info("Launching...")
+
+        lastTick = System.currentTimeMillis()
+
+        // Create file manager
+        fileManager = FileManager()
+
+        // Crate event manager
+        eventManager = EventManager()
+
+        // Register listeners
+        eventManager.registerListener(RotationUtils())
+        eventManager.registerListener(PacketManager())
+        eventManager.registerListener(InventoryUtils())
+        eventManager.registerListener(InventoryHelper)
+        eventManager.registerListener(PacketUtils())
+        eventManager.registerListener(SessionUtils())
+        eventManager.registerListener(MacroManager)
+
+        // Create command manager
+        commandManager = CommandManager()
+
+        // Load client fonts
+        Fonts.loadFonts()
+
+        // Init SoundManager
+        tipSoundManager = TipSoundManager()
+
+        // Setup module manager and register modules
+        moduleManager = ModuleManager()
+        moduleManager.registerModules()
+
+        // Check update
+        APIConnecter.checkStatus()
+        APIConnecter.checkStaffList()
+        APIConnecter.loadPictures()
+        APIConnecter.loadDonors()
+
+        // Init Discord RPC
+        discordRPC = DiscordRPC()
+
+        // Setup default states on first launch
+        if (!fileManager.modulesConfig.hasConfig() || !fileManager.valuesConfig.hasConfig()) {
+            ClientUtils.getLogger().info("Setting up default modules...")
+            moduleManager.getModule(Interface::class.java)?.state = true
+            moduleManager.getModule(SilentRotations::class.java)?.state = true
+            moduleManager.getModule(BrandSpoofer::class.java)?.state = true
+            moduleManager.getModule(TargetESP::class.java)?.state = true
+            moduleManager.getModule(net.aspw.client.features.module.impl.other.DiscordRPC::class.java)?.state = true
+            moduleManager.getModule(Trajectories::class.java)?.state = true
+        }
+
+        // Register commands
+        commandManager.registerCommands()
+
+        // Load configs
+        fileManager.loadConfigs(
+            fileManager.modulesConfig, fileManager.valuesConfig, fileManager.accountsConfig,
+            fileManager.friendsConfig
+        )
+
+        clickGui = ClickGui()
+
+        ClientUtils.getLogger().info("Launched!")
+
+        isStarting = false
+    }
+
+    /**
+     * Execute if client will be stopped
+     */
+    fun stopClient() {
+        // Call client shutdown
+        eventManager.callEvent(ClientShutdownEvent())
+
+        // Save all available configs
+        fileManager.saveAllConfigs()
+
+        // Shutdown discord rpc
+        discordRPC.shutdown()
+    }
+}

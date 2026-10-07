@@ -1,0 +1,30 @@
+pluginManagement {
+    repositories {
+        // Maven Local first, so a ForgeGradle built by tools/fix-forgegradle.ps1 wins
+        // over the (currently unavailable) JitPack artifact.
+        mavenLocal()
+        mavenCentral()
+        gradlePluginPortal()
+        maven { url = "https://maven.minecraftforge.net/" }
+        maven { url = "https://jitpack.io/" }
+        maven { url = "https://repo.spongepowered.org/repository/maven-public/" }
+    }
+    resolutionStrategy {
+        eachPlugin {
+            switch (requested.id.id) {
+                case "net.minecraftforge.gradle.forge":
+                    useModule(forgegradle_coordinate)
+                    break
+                case "org.spongepowered.mixin":
+                    useModule("com.github.xcfrg:mixingradle:${mixingradle_version}")
+                    break
+            }
+        }
+    }
+    plugins {
+        id "org.jetbrains.kotlin.jvm" version kotlin_version
+        id "io.gitlab.arturbosch.detekt" version detekt_version
+    }
+}
+
+rootProject.name = 'daylight'
